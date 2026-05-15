@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 
 
 TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+ZOTERO_CITATION_PREFIX = "ZOTERO_ITEM CSL_CITATION"
 
 
 def load_root(file_path: str) -> ET.Element:
@@ -16,8 +17,9 @@ def load_root(file_path: str) -> ET.Element:
                 return tree.getroot()
 
     if file_path.endswith(".xml"):
-        tree = ET.parse(file_path)
-        return tree.getroot()
+        with open(file_path, "rb") as f:
+            tree = ET.parse(f)
+            return tree.getroot()
 
     raise ValueError("Only .odt and .xml files are supported")
 
@@ -25,11 +27,10 @@ def load_root(file_path: str) -> ET.Element:
 def extract_zotero_citations(file_path: str) -> list[dict]:
     root = load_root(file_path)
 
-    reference_mark_starts = root.findall(
-        f".//{{{TEXT_NS}}}reference-mark-start"
-    )
+    reference_mark_starts = root.findall(f".//{{{TEXT_NS}}}reference-mark-start")
 
     results = []
+    decoder = json.JSONDecoder()
 
     for mark in reference_mark_starts:
         name = mark.get(f"{{{TEXT_NS}}}name")
@@ -37,7 +38,7 @@ def extract_zotero_citations(file_path: str) -> list[dict]:
         if not name:
             continue
 
-        if "ZOTERO_ITEM CSL_CITATION" not in name:
+        if ZOTERO_CITATION_PREFIX not in name:
             continue
 
         decoded = html.unescape(name)
@@ -45,16 +46,12 @@ def extract_zotero_citations(file_path: str) -> list[dict]:
         marker = "CSL_CITATION"
         marker_index = decoded.find(marker)
 
-        if marker_index == -1:
-            continue
-
-        after_marker = decoded[marker_index + len(marker):].strip()
+        after_marker = decoded[marker_index + len(marker) :].strip()
 
         start = after_marker.find("{")
         if start == -1:
             continue
 
-        decoder = json.JSONDecoder()
         citation_json, _ = decoder.raw_decode(after_marker[start:])
 
         results.append(citation_json)
