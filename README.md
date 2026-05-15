@@ -4,7 +4,7 @@ Extract the complete CSL JSON stored in Zotero reference marks.
 
 ## Background
 
-Zotero stores CSL citation metadata inside reference marks in `.odt` documents. Because the CSL JSON can be very large, it is difficult to inspect the complete JSON directly in LibreOffice Writer.
+Zotero stores CSL citation metadata inside reference marks. Because the CSL JSON can be very large, it is difficult to inspect the complete JSON directly in LibreOffice Writer.
 
 ![Example of long Zotero reference mark](assets/reference_mark_in_editor.png)
 
